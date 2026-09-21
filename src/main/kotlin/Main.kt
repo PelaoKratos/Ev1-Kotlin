@@ -1,16 +1,49 @@
 package org.prueba
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-fun main() {
-    val name = "Kotlin"
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    println("Hello, " + name + "!")
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
-    for (i in 1..5) {
-        //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-        // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        println("i = $i")
+fun main() = runBlocking {
+    val catalogo = crearCatalogo()
+    val ventas = mutableListOf<ResumenPedido>()
+    println("=== SISTEMA FOODEXPRESS ===")
+    println("Promocion: lleva 3 o más productos y recibe 5% adicional de descuento.")
+
+    pedidos@ while (true) {
+        mostrarCatalogo(catalogo)
+        println("Selecciona productos separados por coma (ejemplo: 1,3). Escribe 0 para salir:")
+        val entrada = readlnOrNull() ?: break
+        if (entrada.trim() == "0") break
+
+        try {
+            val productos = seleccionarProductos(entrada, catalogo)
+            var tipoCliente: String
+            while (true) {
+                println("Cliente tipo (regular/vip/premium):")
+                tipoCliente = readlnOrNull()?.trim()?.lowercase() ?: break@pedidos
+                try {
+                    porcentajeCliente(tipoCliente)
+                    break
+                } catch (e: IllegalArgumentException) {
+                    println("Error: ${e.message}")
+                }
+            }
+            val pedido = calcularPedido(productos, tipoCliente)
+            var estado: EstadoPedido = EstadoPedido.Pendiente
+            val tarea = launch {
+                estado = procesarPedido(productos)
+            }
+            println("Procesando pedido...")
+            tarea.join()
+            if (estado is EstadoPedido.Listo) {
+                ventas.add(pedido)
+                mostrarResumen(pedido)
+            }
+            mostrarEstado(estado)
+        } catch (e: IllegalArgumentException) {
+            println("Error: ${e.message}")
+        }
     }
+    mostrarReporte(ventas)
+    println("Gracias por usar FoodExpress.")
 }

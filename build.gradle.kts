@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.3.0"
+    application
 }
 
 group = "org.prueba"
@@ -10,14 +11,19 @@ repositories {
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
-    implementation("org.jetbrains.kotlin:kotlin-coroutines-core:1.10.2")
+    testImplementation(kotlin("test-junit"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 }
 
 kotlin {
     jvmToolchain(25)
 }
 
-tasks.test {
-    useJUnitPlatform()
+application {
+    mainClass.set("org.prueba.MainKt")
+}
+
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+    jvmArgs("-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8")
 }
